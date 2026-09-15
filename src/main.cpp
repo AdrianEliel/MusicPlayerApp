@@ -1,12 +1,12 @@
 #include <iostream>
 #include <filesystem>
+#include <list>
+#include <random>
+#include <algorithm>
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 #include "imgui.h"
 #include "imgui-SFML.h"
-#include <list>
-#include <random>
-#include <algorithm>
 
 struct Song {
     std::string name;
@@ -132,7 +132,7 @@ std::filesystem::path loadMusicRoot() {
     return std::filesystem::path(__FILE__).parent_path() / "Music/";
 }
 
-int PlaylistMenu(std::vector<Playlist> playlists, MusicManager& mm, bool shuffleMode) {
+int PlaylistMenu(std::vector<Playlist> playlists, MusicManager& mm, bool shuffleMode, int windowSizeX, int windowSizeY) {
     static int selectedIdx = 0;
     ImGui::Begin("Playlists", 0, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
             | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize);
@@ -149,35 +149,43 @@ int PlaylistMenu(std::vector<Playlist> playlists, MusicManager& mm, bool shuffle
         }
         ImGui::EndCombo();
     }
+
     Playlist& pl = playlists[selectedIdx];
     if (ImGui::Button("Play Playlist", ImVec2(100, 25))) {
         mm.playPlaylist(playlists[selectedIdx], 0, false);
     }
-    ImGui::SetNextWindowSize(ImVec2(200,100));
-    ImGui::Begin("Playlist Songs", nullptr, ImGuiWindowFlags_NoMove);
+    ImGui::SameLine();
+    ImGui::Checkbox("Shuffle", &shuffleMode);
+
+    ImGui::SetNextWindowSize(ImVec2(300,100));
+    ImGui::SetNextWindowPos(ImVec2(0,windowSizeY/2-125));
+    ImGui::Begin("Songs", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
     for (int j =0; j < (int)pl.songs.size(); j++) {
         if (ImGui::Selectable(pl.songs[j].name.c_str())) {
             mm.playPlaylist(pl, j, shuffleMode);
         }
     }
     ImGui::End();
+
     ImGui::End();
 
     return selectedIdx;
 }
 
 int main() {
-    auto playlists = loadPlaylists(loadMusicRoot());
 
+    //music setup
+    auto playlists = loadPlaylists(loadMusicRoot());
     MusicManager music_manager = MusicManager();
 
+    //main window setup
     sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
     int desktopSizeX = desktop.size.x;
     int desktopSizeY = desktop.size.y;
     unsigned windowSizeX = 400;
     unsigned windowSizeY = 400;
-    sf::RenderWindow window(sf::VideoMode({windowSizeX, windowSizeY}), "Adrian Music Player", sf::Style::None);
-    window.setPosition({desktopSizeX-400, desktopSizeY-900});
+
+    sf::RenderWindow window(sf::VideoMode({windowSizeX, windowSizeY}), "Adrian Music Player");
     window.setFramerateLimit(60);
 
     if (!ImGui::SFML::Init(window)) {
@@ -196,11 +204,14 @@ int main() {
             }
         }
 
+        windowSizeX = window.getSize().x;
+        windowSizeY = window.getSize().y;
+
         ImGui::SFML::Update(window, deltaClock.restart());
 
         ImGui::SetNextWindowPos(ImVec2(0,0));
 
-        int selectedIdx = PlaylistMenu(playlists, music_manager, music_manager.getShuffleMode());
+        int selectedIdx = PlaylistMenu(playlists, music_manager, music_manager.getShuffleMode(),windowSizeX,windowSizeY);
 
         //Play and Pause
         ImGui::SetNextWindowPos(ImVec2(windowSizeX/2 - 75, windowSizeY-100));
