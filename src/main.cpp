@@ -66,7 +66,7 @@ public:
 
     void prev() {
         if (queue.empty()) return;
-        queueIdx = (queueIdx-1) % queue.size();
+        queueIdx = (queueIdx-1 + queue.size()) % queue.size();
         loadCurrent();
     }
 
@@ -157,7 +157,7 @@ int PlaylistMenu(std::vector<Playlist> playlists, MusicManager& mm, bool shuffle
     ImGui::SameLine();
     ImGui::Checkbox("Shuffle", &shuffleMode);
 
-    ImGui::SetNextWindowSize(ImVec2(300,100));
+    ImGui::SetNextWindowSize(ImVec2(windowSizeX/2,100));
     ImGui::SetNextWindowPos(ImVec2(0,windowSizeY/2-125));
     ImGui::Begin("Songs", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
     for (int j =0; j < (int)pl.songs.size(); j++) {
